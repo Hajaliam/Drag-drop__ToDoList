@@ -11,6 +11,15 @@ let todoDiv = document.querySelectorAll(".todo")
 let inputToDo
 let newToDo
 let targetElem
+let works 
+
+/////////////////setting works with local storage to prevent formatting //////
+if (localStorage.getItem("toDoes")) {
+    works = localStorage.getItem("toDoes")
+    works = JSON.parse(works)
+} else {
+    works = []
+}
 //////////////////////basic function load//////////////
 listDragUpdater()
 deleteBtnUpdater()
@@ -42,11 +51,20 @@ statusDives.forEach(function(div){
 ///////////////////Id counter/////////////////////////
 let idCounter = 0
 ///////////////////functions//////////////////////////
+function updateLocal(id) {
+    works.splice(id , 1 )
+    WorkWithLocalStorage("toDoes",works)
+    
+}
+function WorkWithLocalStorage(key,value){ 
+    localStorage.setItem(key,JSON.stringify(value))
+}
 function openModal(){
+    document.querySelector("#todo_input").value =  ""
     modal.style.top = '50%'
     todoContainer.style.filter = 'blur(2px)'
 }
-function closeModal(){
+function closeModal(){ 
     modal.style.top = '-50%'
     todoContainer.style.filter = 'none'
 }
@@ -59,8 +77,18 @@ function addNewTodo(){
     noStatusDiv.appendChild(newToDo)
     closeModal()
     todoDiv = document.querySelectorAll(".todo")
+    
     listDragUpdater()
     deleteBtnUpdater()
+    /////////تعریف یک متغیر موقت جها اضافه کردن به لوکال استوریج /////
+     let newWork = {
+        value : document.getElementById("todo_input").value ,
+        id : idCounter ,
+        position : "no_status"
+    }
+    
+    works.push(newWork) 
+    WorkWithLocalStorage("toDoes",works)  
 }
 function dragStart(event){
     let id =  event.target.id
@@ -71,12 +99,17 @@ function dragStart(event){
 function dragoverHandler(event){
     event.preventDefault()
 }
-// function dragHandler(event){
-//     event.preventDefault()
-// }
+
 function dropHandler(event){
-    // console.log(event.dataTransfer.getData('todoElemId'));
+   
     targetElem = document.getElementById(event.dataTransfer.getData('todoElemId'))
+    let targetWork = works.find(work => {
+        if (work.id == targetElem.id) {
+            return targetElem
+        }
+    })
+    targetWork.position = event.target.id
+    WorkWithLocalStorage("toDoes",works)
     event.target.appendChild(targetElem)
     event.target.style.border = 'none'
 }
@@ -86,9 +119,10 @@ function listDragUpdater(){
     })
 }
 function deleteToDoHandler(event){
+    let targetElemIndex = works.findIndex(e => e.id == event.target.parentElement.id )
+    updateLocal(targetElemIndex)
     event.target.parentElement.parentElement.style.border = 'none'
     event.target.parentElement.remove()
-    // console.log(event.target.parentElement);
 }
 function deleteBtnUpdater(){
     deleteToDoBtn = document.querySelectorAll(".close")
@@ -96,3 +130,22 @@ function deleteBtnUpdater(){
         btn.addEventListener('click',deleteToDoHandler)
     })
 }
+//////////////////////localStorage loading///////
+$(document).ready(function () {
+       
+       works.forEach(e => {
+        let positionTarget = e.position
+        newToDo = document.createElement('div')
+        newToDo.setAttribute('class','todo')
+        newToDo.setAttribute('draggable','true')
+        newToDo.setAttribute('id', e.id ) 
+        newToDo.innerHTML = e.value +'\n<span class="close">&times;</span>'
+        document.querySelector('#'+positionTarget).append(newToDo)
+        todoDiv = document.querySelectorAll(".todo")
+    
+        listDragUpdater()
+        deleteBtnUpdater()
+        
+       })
+        
+});
